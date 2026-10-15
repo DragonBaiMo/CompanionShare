@@ -3,7 +3,7 @@
 ## 0.2.0 — 2026-10-15
 
 - GitHub Actions CI：修正 setup-android 默认安装已移除的旧版 SDK `tools` 包的问题，改用 `packages: ''`；Android SDK 36 编译成功，产物包含 Owner/Viewer 两份 Debug APK。
-- 增加 Linux/Windows 两平台服务端测试和 Docker Compose 配置检查工作流（结果以 CI 实际运行记录为准）。
+- 增加 Linux/Windows 两平台服务端测试和 Docker Compose 配置检查工作流；GitHub Actions #38666630029 的三个 Job 全部通过。
 
 - 协议信令新增 Viewer 初始化就绪屏障；有效 Viewer 准备完成后 Owner 才开始采集和 Offer，过期会话自动结束。
 - 修复切换媒体源时旧 SDP/ICE 和迟到的屏幕投射关闭回调影响新会话的竞态。

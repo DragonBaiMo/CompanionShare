@@ -15,6 +15,8 @@
 - Android 两端针对 WebRTC 会话竞态做了源码级修复；两份应用现已通过 GitHub Actions 的 Android 36/Kotlin Debug 编译，行为仍需真机验证。
 - GitHub Actions [构建记录 #38666010522](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666010522)：`success`，提交 `662e57d41d9cea28e4f39ebe0c9f1e0553786d88`；上传 Artifact `CompanionShare-Android-debug`（ID `11940154366`），包含两个 APK。Artifact ZIP SHA-256 为 `d572d44b64ae602287541b1960b58610d85f952e32797913c23613502cdaaab2`。
 
+- GitHub Actions [跨平台验证 #38666630029](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666630029)：Windows-latest 和 Ubuntu-latest 的 14 项 Node 集成测试、原生 Node 服务启动/HTTP 健康检查全部通过；Ubuntu Docker Compose `config --quiet` 通过。该检查不代表实际启动 Docker 容器或公网 TURN 中继。
+
 ## 未通过验证、禁止宣称完成
 
 1. **Owner APK / Viewer APK：已在 GitHub Actions 构建，但未安装到真机。** 当前工作容器仍无 Android SDK；CI 已实际编译，不能因此认定目标手机的系统采集行为已通过。

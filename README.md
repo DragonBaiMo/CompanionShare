@@ -9,8 +9,8 @@ CompanionShare 是供手机持有人主动授权的一对一实时共享系统�
 | 部分 | 文件 | 当前验证状态 |
 |---|---|---|
 | 信令服务 | `server/`（Node.js 22+，零 NPM 运行时依赖） | 14 项集成测试通过 |
-| Linux 部署 | `deploy/start-linux.sh`、`deploy/docker-compose.yml` | 配置编写完成，正式公网部署未测试 |
-| Windows 部署 | `deploy/start-windows.ps1`、Docker Compose | 配置编写完成，Windows 实机未测试 |
+| Linux 部署 | `deploy/start-linux.sh`、`deploy/docker-compose.yml` | Ubuntu CI 中 Node 原生启动/健康检查与 Compose 配置检查通过；公网部署未测试 |
+| Windows 部署 | `deploy/start-windows.ps1`、Docker Compose | Windows CI 中 Node 原生启动/健康检查通过；Windows Docker/TURN 未测试 |
 | Owner APK 源码 | `android/owner/` | GitHub Actions 已完成 Debug APK 编译，尚未真机安装测试 |
 | Viewer APK 源码 | `android/viewer/` | GitHub Actions 已完成 Debug APK 编译，尚未真机安装测试 |
 | Android WebRTC | `android/common/` | 已编写，未进行双机媒体传输测试 |
@@ -96,6 +96,8 @@ gradle :owner:assembleDebug :viewer:assembleDebug
 - 待机时不创建 Camera、MediaProjection、AudioRecord 或编码器，按需创建媒体会话。小米 HyperOS 3 上的保活、唤醒、电量、摄像头授权边界必须实测。
 
 ## 验证命令与文档
+
+[Windows / Linux 信令服务与 Docker Compose 检查](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666630029)：3 个 CI Job 全部通过（原生服务检查不代表公网 TLS/TURN 或 Docker 容器实际运行通过）。
 
 ```bash
 cd server && npm test
