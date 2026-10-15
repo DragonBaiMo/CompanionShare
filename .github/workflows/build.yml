@@ -18,9 +18,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
-      - name: Install Android platform
-        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      # Ubuntu runner includes Android cmdline-tools. Avoid the obsolete 'tools' SDK package.
+      - name: Install Android SDK platform
+        run: |
+          command -v sdkmanager
+          sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0'
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
