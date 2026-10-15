@@ -1,0 +1,17 @@
+# Credentials and machine state
+.env
+**/.env
+**/data/
+**/logs/
+**/tmp/
+# Android local build and signing
+.gradle/
+**/.gradle/
+**/build/
+local.properties
+*.jks
+*.keystore
+# Generated ZIPs/APKs
+*.apk
+*.aab
+*.zip
