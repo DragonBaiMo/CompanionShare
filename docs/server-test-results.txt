@@ -1,0 +1,98 @@
+
+> companionshare-signal@0.2.0 test
+> node --test test/*.test.mjs
+
+TAP version 13
+# Subtest: pair requires owner confirmation, binds exactly one viewer and stores only token hashes
+ok 1 - pair requires owner confirmation, binds exactly one viewer and stores only token hashes
+  ---
+  duration_ms: 42.438226
+  type: 'test'
+  ...
+# Subtest: only armed owner can allow session; signaling is role-limited; pause revokes active session
+ok 2 - only armed owner can allow session; signaling is role-limited; pause revokes active session
+  ---
+  duration_ms: 15.912485
+  type: 'test'
+  ...
+# Subtest: pair code is single use; unpair cuts access and prevents old viewer login
+ok 3 - pair code is single use; unpair cuts access and prevents old viewer login
+  ---
+  duration_ms: 13.466106
+  type: 'test'
+  ...
+# Subtest: pairing denial and malformed requests do not grant media access
+ok 4 - pairing denial and malformed requests do not grant media access
+  ---
+  duration_ms: 4.744291
+  type: 'test'
+  ...
+# Subtest: TURN credentials generated only when configured, with 1h expiry
+ok 5 - TURN credentials generated only when configured, with 1h expiry
+  ---
+  duration_ms: 0.998575
+  type: 'test'
+  ...
+# Subtest: plaintext public binding is disallowed by default
+ok 6 - plaintext public binding is disallowed by default
+  ---
+  duration_ms: 0.619944
+  type: 'test'
+  ...
+# Subtest: server enrollment key is required for first-time owner onboarding
+ok 7 - server enrollment key is required for first-time owner onboarding
+  ---
+  duration_ms: 4.13326
+  type: 'test'
+  ...
+# Subtest: screen stream request waits for explicit Owner session approval
+ok 8 - screen stream request waits for explicit Owner session approval
+  ---
+  duration_ms: 8.154892
+  type: 'test'
+  ...
+# Subtest: a captured pairing code is invalid after successful one-time use
+ok 9 - a captured pairing code is invalid after successful one-time use
+  ---
+  duration_ms: 9.075879
+  type: 'test'
+  ...
+# Subtest: WebSocket large SDP messages use RFC6455 64-bit length frames
+ok 10 - WebSocket large SDP messages use RFC6455 64-bit length frames
+  ---
+  duration_ms: 13.34178
+  type: 'test'
+  ...
+# Subtest: media offer waits for the Viewer renderer and peer to report readiness
+ok 11 - media offer waits for the Viewer renderer and peer to report readiness
+  ---
+  duration_ms: 7.980969
+  type: 'test'
+  ...
+# Subtest: an accepted session without a Viewer ready signal times out
+ok 12 - an accepted session without a Viewer ready signal times out
+  ---
+  duration_ms: 9.25418
+  type: 'test'
+  ...
+# Subtest: stale session signaling is rejected after switching video source
+ok 13 - stale session signaling is rejected after switching video source
+  ---
+  duration_ms: 7.649089
+  type: 'test'
+  ...
+# Subtest: malformed ICE candidates and oversized SDP never reach the other peer
+ok 14 - malformed ICE candidates and oversized SDP never reach the other peer
+  ---
+  duration_ms: 8.203574
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 230.492626

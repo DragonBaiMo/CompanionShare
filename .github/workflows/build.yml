@@ -1,0 +1,36 @@
+name: Build Android APKs and test signaling
+on:
+  push:
+  workflow_dispatch:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Test signaling protocol
+        run: cd server && npm test
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android platform
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Compile two debug APKs
+        working-directory: android
+        run: gradle --no-daemon :owner:assembleDebug :viewer:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CompanionShare-Android-debug
+          path: |
+            android/owner/build/outputs/apk/debug/*.apk
+            android/viewer/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

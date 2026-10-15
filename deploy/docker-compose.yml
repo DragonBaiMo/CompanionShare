@@ -1,0 +1,62 @@
+# CompanionShare's ONLY internet-facing endpoints are Caddy HTTPS and coturn UDP/TCP.
+services:
+  signal:
+    image: node:22-alpine
+    working_dir: /app/server
+    command: ["node", "src/server.mjs"]
+    environment:
+      BIND: 0.0.0.0
+      PORT: 8087
+      ALLOW_PRIVATE_HTTP: "1"
+      DATA_FILE: /state/devices.json
+      TURN_HOST: ${TURN_HOST:?TURN_HOST required}
+      TURN_SECRET: ${TURN_SECRET:?TURN_SECRET required}
+      ENROLLMENT_KEY: ${ENROLLMENT_KEY:?ENROLLMENT_KEY required}
+    volumes:
+      - ../server:/app/server:ro
+      - server_state:/state
+    expose:
+      - "8087"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8087/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN required}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - signal
+    restart: unless-stopped
+  turn:
+    image: coturn/coturn:4.18.0
+    # NOTE: Docker UDP relay on desktop hosts depends on NAT/port forwarding.
+    command:
+      - "--fingerprint"
+      - "--use-auth-secret"
+      - "--static-auth-secret=${TURN_SECRET:?TURN_SECRET required}"
+      - "--realm=${DOMAIN:?DOMAIN required}"
+      - "--external-ip=${PUBLIC_IP:?PUBLIC_IP required}"
+      - "--listening-port=3478"
+      - "--min-port=49160"
+      - "--max-port=49200"
+      - "--log-file=stdout"
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "49160-49200:49160-49200/udp"
+    restart: unless-stopped
+volumes:
+  server_state:
+  caddy_data:
+  caddy_config:

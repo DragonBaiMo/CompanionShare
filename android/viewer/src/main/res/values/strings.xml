@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">CompanionShare - Viewer</string>
+    <string name="title">CompanionShare — 观看端</string>
+    <string name="server_hint">wss://example.com/ws</string>
+    <string name="code_hint">输入 Owner 显示的八位配对码</string>
+    <string name="pair">提交配对申请</string>
+    <string name="connect">连接已绑定的手机</string>
+    <string name="front">前置摄像头</string>
+    <string name="back">后置摄像头</string>
+    <string name="screen">手机屏幕</string>
+    <string name="stop">结束观看</string>
+    <string name="audio">传输环境音频</string>
+    <string name="chat_hint">输入文字消息</string>
+    <string name="send">发送</string>
+    <string name="waiting">未连接</string>
+    <string name="pair_waiting">等待 Owner 本机批准</string>
+    <string name="paired">配对成功，观看权限已保存</string>
+    <string name="connected">已连接；等待 Owner 开启共享</string>
+    <string name="stream_waiting">等待 Owner 接受当前媒体请求</string>
+    <string name="streaming">正在观看</string>
+    <string name="disconnected">连接中断，检查网络</string>
+    <string name="error_server">请配置有效的 wss:// 信令地址</string>
+    <string name="error_unknown">错误：%1$s</string>
+    <string name="from_owner">对方：%1$s</string>
+    <string name="chat_sent">我：%1$s</string>
+    <string name="revoked">Owner 已撤销设备绑定</string>
+    <string name="no_pairing">尚未配对，请先输入配对码</string>
+    <string name="bad_code">请输入有效的八位配对码</string>
+    <string name="pair_rejected">Owner 拒绝了配对请求</string>
+    <string name="owner_armed">Owner 已开启共享</string>
+    <string name="owner_unavailable">Owner 当前未开放媒体共享</string>
+    <string name="stream_ended">本次观看已结束</string>
+</resources>
