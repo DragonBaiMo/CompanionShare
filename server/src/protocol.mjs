@@ -5,6 +5,7 @@ import { DeviceStore, hashToken, randomToken, tokenMatches } from './store.mjs';
 import { makeIceServers } from './turn.mjs';
 
 const PAIR_TTL_MS = 5 * 60_000;
+const OWNER_RESPONSE_TTL_MS = 60_000;
 const SESSION_READY_TTL_MS = 60_000;
 const ALLOWED_SOURCES = new Set(['front', 'back', 'screen']);
 const isToken = (s) => typeof s === 'string' && /^[A-Za-z0-9_-]{40,64}$/.test(s);
@@ -134,6 +135,12 @@ export class Relay {
       case 'owner.pair.approve': {
         const pairing = this.pairings.get(id);
         if (!pairing?.pending || pairing.pending.id !== msg.requestId) return this.error(peer, 'UNKNOWN_PAIR_REQUEST');
+        if (pairing.expires <= Date.now()) {
+          // NOTE: A late approval must not extend the pairing code's five-minute lifespan.
+          this.send(pairing.pending.peer, { type: 'pair.expired' });
+          this.pairings.delete(id);
+          return this.error(peer, 'UNKNOWN_PAIR_REQUEST');
+        }
         const waiting = pairing.pending.peer;
         this.pairings.delete(id);
         if (waiting.closed) return this.error(peer, 'VIEWER_OFFLINE');
@@ -176,6 +183,10 @@ export class Relay {
         if (!session || session.requestId !== msg.requestId || !peer.identity.armed || !this.viewer(id)) {
           return this.error(peer, 'NO_PENDING_SESSION');
         }
+        if (Date.now() - session.createdAt >= OWNER_RESPONSE_TTL_MS) {
+          this.endSession(id, 'OWNER_RESPONSE_TIMEOUT');
+          return this.error(peer, 'NO_PENDING_SESSION');
+        }
         this.pending.delete(id);
         // NOTE: The Viewer must allocate its renderer and peer connection before
         // the Owner may generate an offer. Cross-socket delivery order is not guaranteed.
@@ -215,7 +226,8 @@ export class Relay {
         if (!owner || !owner.identity.armed) return this.error(peer, 'OWNER_UNAVAILABLE');
         if (!ALLOWED_SOURCES.has(msg.source) || typeof msg.audio !== 'boolean') return this.error(peer, 'INVALID_SOURCE');
         this.endSession(id, 'SWITCH_SOURCE');
-        const session = { requestId: randomToken(12), source: msg.source, audio: msg.audio };
+        const session = { requestId: randomToken(12), source: msg.source,
+          audio: msg.audio, createdAt: Date.now() };
         this.pending.set(id, session);
         this.send(owner, { type: 'session.request', ...session });
         this.send(peer, { type: 'session.waiting', requestId: session.requestId });
@@ -296,6 +308,11 @@ export class Relay {
       if (code.expires < now) {
         this.send(code.pending?.peer, { type: 'pair.expired' });
         this.pairings.delete(id);
+      }
+    }
+    for (const [id, session] of this.pending) {
+      if (now - session.createdAt >= OWNER_RESPONSE_TTL_MS) {
+        this.endSession(id, 'OWNER_RESPONSE_TIMEOUT');
       }
     }
     for (const [id, session] of this.active) {

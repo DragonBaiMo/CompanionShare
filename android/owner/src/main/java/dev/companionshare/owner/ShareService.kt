@@ -27,6 +27,7 @@ import org.webrtc.IceCandidate
 class ShareService : Service() {
     companion object {
         const val ACTION_ARM = "dev.companionshare.owner.ARM"
+        const val ACTION_BOOT_ONLINE = "dev.companionshare.owner.BOOT_ONLINE"
         const val ACTION_PAUSE = "dev.companionshare.owner.PAUSE"
         const val ACTION_PAIR_CREATE = "dev.companionshare.owner.PAIR_CREATE"
         const val ACTION_PAIR_APPROVE = "dev.companionshare.owner.PAIR_APPROVE"
@@ -39,10 +40,17 @@ class ShareService : Service() {
         private const val TAG = "CompanionShare"
         private const val CHANNEL = "companionshare-owner"
         private const val NOTIFY = 8421
+        const val CHAT_NOTIFY = 8422
+        private val pendingChats = ArrayDeque<String>()
+        fun takePendingChats(): List<String> = synchronized(pendingChats) {
+            pendingChats.toList().also { pendingChats.clear() }
+        }
         private val BASE_TYPES = ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA or
             ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
             ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING
         @Volatile var armed = false
+            private set
+        @Volatile var standbyRunning = false
             private set
         @Volatile var pendingPairId: String? = null
             private set
@@ -56,6 +64,7 @@ class ShareService : Service() {
     private var request: JSONObject? = null
     private var screenGrant: Intent? = null
     private var screenServiceTypeActive = false
+    private var serverReady = false
     private var iceServers = JSONArray()
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -69,7 +78,8 @@ class ShareService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_ARM -> arm()
-            ACTION_PAUSE -> pause()
+            ACTION_BOOT_ONLINE -> startBootConnection()
+            ACTION_PAUSE -> pause(userRequested = true)
             ACTION_PAIR_CREATE -> if (!pendingUnpair()) signal?.send("owner.pair.create") else Unit
             ACTION_PAIR_APPROVE -> {
                 val id = intent.getStringExtra("id")
@@ -121,7 +131,30 @@ class ShareService : Service() {
         try { startForeground(NOTIFY, notification(), BASE_TYPES) }
         catch (e: Exception) { inform(e.message ?: "FOREGROUND_SERVICE_DENIED"); stopSelf(); return }
         armed = true
+        standbyRunning = false
+        updateNotification()
         inform(getString(R.string.armed))
+        if (signal == null) connectSignal()
+        else if (serverReady) signal?.send("owner.arm") { put("armed", true) }
+    }
+
+    private fun startBootConnection() {
+        val prefs = getSharedPreferences("companionshare", MODE_PRIVATE)
+        if (armed || signal != null) return
+        if (!prefs.getBoolean("boot_resume_connection", false)) { stopSelf(); return }
+        try {
+            startForeground(NOTIFY, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING)
+        } catch (error: RuntimeException) {
+            Log.w(TAG, "Messaging-only foreground service denied", error)
+            stopSelf()
+            return
+        }
+        standbyRunning = true
+        updateNotification()
+        connectSignal()
+    }
+
+    private fun connectSignal() {
         val auth = try {
             val credential = SecretStore.owner(this)
             JSONObject().put("type", "owner.register")
@@ -131,21 +164,29 @@ class ShareService : Service() {
         } catch (error: Exception) {
             Log.e(TAG, "Android Keystore credential initialization failed", error)
             inform(getString(R.string.error_credentials))
-            pause()
+            pause(userRequested = true)
             return
         }
         val url = SecretStore.server(this)
-        signal = SignalClient(::handle, { online ->
+        val channel = SignalClient(::handle, { online ->
+            if (!online) serverReady = false
             inform(getString(if (online) R.string.server_online else R.string.server_offline))
             if (!online) endCapture()
-        }).also { channel ->
+        })
+        signal = channel
+        try {
             channel.start(url, auth)
+        } catch (error: Exception) {
+            Log.e(TAG, "Signal connection initialization failed", error)
+            inform(getString(R.string.error_server))
+            pause(userRequested = true)
         }
     }
 
     private fun handle(message: JSONObject) {
         when (message.optString("type")) {
             "owner.ready" -> {
+                serverReady = true
                 SecretStore.clearEnrollment(this)
                 // NOTE: Enrollment is a one-time capability, never resend it on reconnect.
                 SecretStore.owner(this).let { credentials ->
@@ -153,7 +194,10 @@ class ShareService : Service() {
                         .put("deviceId", credentials.deviceId).put("secret", credentials.token))
                 }
                 if (pendingUnpair()) signal?.send("owner.unpair")
-                else if (armed) signal?.send("owner.arm") { put("armed", true) }
+                else signal?.send("owner.arm") { put("armed", armed) }
+                // Boot can restore only messaging after a successful authenticated session.
+                if (armed) getSharedPreferences("companionshare", MODE_PRIVATE).edit()
+                    .putBoolean("boot_resume_connection", true).apply()
             }
             "pair.code" -> inform(getString(R.string.pair_code, message.getString("code")))
             "pair.request" -> {
@@ -189,12 +233,12 @@ class ShareService : Service() {
                         message.optInt("sdpMLineIndex"), message.optString("candidate")))
                 }
             }
-            "chat.message" -> inform(getString(R.string.from_viewer, message.optString("text")))
+            "chat.message" -> incomingChat(message.optString("text"))
             "error" -> {
                 val code = message.optString("code")
                 inform(getString(R.string.error_unknown, code))
                 if (code in setOf("DENIED", "INVALID_CREDENTIALS", "ENROLLMENT_DENIED", "DEVICE_LIMIT")) {
-                    pause()
+                    pause(userRequested = true)
                 }
             }
         }
@@ -298,10 +342,14 @@ class ShareService : Service() {
         if (armed) updateNotification()
     }
 
-    private fun pause() {
-        if (!armed) { stopSelf(); return }
+    private fun pause(userRequested: Boolean = false) {
+        if (userRequested) getSharedPreferences("companionshare", MODE_PRIVATE).edit()
+            .putBoolean("boot_resume_connection", false).apply()
+        if (!armed && !standbyRunning && signal == null) { stopSelf(); return }
         endCapture()
         armed = false
+        standbyRunning = false
+        serverReady = false
         pendingPairId = null
         signal?.send("owner.arm") { put("armed", false) }
         signal?.stop()
@@ -323,6 +371,7 @@ class ShareService : Service() {
             Intent(this, ShareService::class.java).setAction(ACTION_PAUSE),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val description = when {
+            standbyRunning && !armed -> getString(R.string.notification_standby)
             pendingScreenId != null -> getString(R.string.notification_screen)
             pendingPairId != null -> getString(R.string.notification_pair)
             session != null -> getString(R.string.notification_streaming,
@@ -331,7 +380,8 @@ class ShareService : Service() {
         }
         return Notification.Builder(this, CHANNEL)
             .setSmallIcon(android.R.drawable.ic_menu_camera)
-            .setContentTitle(getString(R.string.notification_title))
+            .setContentTitle(getString(if (standbyRunning && !armed)
+                R.string.notification_standby_title else R.string.notification_title))
             .setContentText(description)
             .setContentIntent(open)
             .setOngoing(true)
@@ -343,6 +393,26 @@ class ShareService : Service() {
 
     private fun updateNotification() {
         getSystemService(NotificationManager::class.java).notify(NOTIFY, notification())
+    }
+
+    private fun incomingChat(text: String) {
+        val rendered = getString(R.string.from_viewer, text.take(2000))
+        synchronized(pendingChats) {
+            if (pendingChats.size >= 20) pendingChats.removeFirst()
+            pendingChats.addLast(rendered)
+        }
+        inform(getString(R.string.new_chat))
+        // Avoid displaying private message text on the device lock screen.
+        val open = PendingIntent.getActivity(this, 12, Intent(this, OwnerActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val notice = Notification.Builder(this, CHANNEL)
+            .setSmallIcon(android.R.drawable.ic_dialog_email)
+            .setContentTitle(getString(R.string.notification_new_chat))
+            .setContentText(getString(R.string.new_chat))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(CHAT_NOTIFY, notice)
     }
 
     private fun inform(text: String) {

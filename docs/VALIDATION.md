@@ -1,7 +1,13 @@
 # CompanionShare 验证记录
 
 日期：2026-10-15（北京时间）
-版本：0.2.0 Debug 测试版
+版本：0.2.1 开发候选版（保留下方 0.2.0 历史实测记录）
+
+## 0.2.1 新增验证（不继承 0.2.0 的 APK 成功声明）
+
+- 本地 Node.js 22.16.0 运行 `npm --prefix server test`：16/16 通过，新增过期配对批准和未处理观看请求超时的两条回归。
+- Android Manifest/字符串资源 XML 解析、`server/src/protocol.mjs` 静态语法及 `git diff --check` 通过。
+- **未进行**：0.2.1 双 APK 编译、Android 16 真机开机恢复与消息通知测试、Windows/Linux 公网/TURN 实测。需以新版本 CI 和设备日志补齐；下方 Android 构建记录仅属于 0.2.0。
 
 ## 已实际执行
 

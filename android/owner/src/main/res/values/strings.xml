@@ -12,8 +12,11 @@
     <string name="chat_hint">输入要发送的消息</string>
     <string name="send">发送文字</string>
     <string name="waiting">未开启共享</string>
+    <string name="standby">消息连接已恢复；摄像头、麦克风和屏幕仍需本机重新开启共享</string>
     <string name="armed">共享已开启；摄像头和麦克风只在观看时工作</string>
     <string name="notification_title">CompanionShare 共享已开启</string>
+    <string name="notification_standby_title">CompanionShare 仅消息在线</string>
+    <string name="notification_standby">重启后未授权媒体采集；点击应用可重新开启共享，或点暂停关闭消息连接</string>
     <string name="notification_text">远程查看可用；点击打开，或点暂停立即终止</string>
     <string name="notification_streaming">正在共享 %1$s；点击可随时停止</string>
     <string name="notification_pause">暂停</string>
@@ -38,4 +41,6 @@
     <string name="error_unknown">操作失败：%1$s</string>
     <string name="from_viewer">对方：%1$s</string>
     <string name="chat_sent">我：%1$s</string>
+    <string name="new_chat">收到对方的新消息，打开应用查看</string>
+    <string name="notification_new_chat">CompanionShare 新消息</string>
 </resources>

@@ -4,6 +4,7 @@ package dev.companionshare.owner
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -33,6 +34,7 @@ class OwnerActivity : Activity() {
     private val events = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.getStringExtra("text")?.let { status.append("\n$it") }
+            ShareService.takePendingChats().forEach { status.append("\n$it") }
             inspectRequests()
         }
     }
@@ -93,7 +95,14 @@ class OwnerActivity : Activity() {
     override fun onResume() {
         super.onResume()
         inspectRequests()
-        status.append("\n${getString(if (ShareService.armed) R.string.armed else R.string.waiting)}")
+        val state = when {
+            ShareService.armed -> R.string.armed
+            ShareService.standbyRunning -> R.string.standby
+            else -> R.string.waiting
+        }
+        status.append("\n${getString(state)}")
+        ShareService.takePendingChats().forEach { status.append("\n$it") }
+        getSystemService(NotificationManager::class.java).cancel(ShareService.CHAT_NOTIFY)
         val local = getSharedPreferences("companionshare", MODE_PRIVATE)
         if (local.getBoolean("boot_needs_rearm", false)) {
             status.append("\n${getString(R.string.needs_rearm)}")
@@ -167,7 +176,7 @@ class OwnerActivity : Activity() {
         val intent = Intent(this, ShareService::class.java).setAction(command)
         if (key != null && value != null) intent.putExtra(key, value)
         // An already-active service processes commands; never start sensitive capture from background.
-        if (ShareService.armed) startService(intent)
+        if (ShareService.armed || ShareService.standbyRunning) startService(intent)
     }
 
     override fun onDestroy() {

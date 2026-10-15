@@ -294,3 +294,40 @@ test('malformed ICE candidates and oversized SDP never reach the other peer', as
   owner.send('signal.offer', { requestId: req.requestId, sdp: 'a'.repeat(200_001) });
   assert.equal((await owner.next('error')).code, 'INVALID_SDP');
 });
+
+test('an expired pairing cannot be approved even before periodic cleanup', async (t) => {
+  const { app, owner, id, token } = await pair(t);
+  owner.send('owner.pair.create');
+  const code = (await owner.next('pair.code')).code;
+  const replacement = await connect(app);
+  replacement.send('viewer.pair', { code });
+  await replacement.next('pair.waiting');
+  const request = await owner.next('pair.request');
+  app.relay.pairings.get(id).expires = Date.now() - 1;
+  owner.send('owner.pair.approve', { requestId: request.requestId });
+  assert.equal((await owner.next('error')).code, 'UNKNOWN_PAIR_REQUEST');
+  await replacement.next('pair.expired');
+  assert.equal(tokenMatches(token, app.relay.store.get(id).viewerHash), true);
+});
+
+test('unanswered media request expires and late approval is rejected', async (t) => {
+  const { app, owner, viewer, id } = await pair(t);
+  owner.send('owner.arm', { armed: true });
+  await owner.next('owner.armed');
+  viewer.send('viewer.session.request', { source: 'front', audio: true });
+  const request = await owner.next('session.request');
+  app.relay.cleanup(Date.now() + 61_000);
+  assert.equal((await owner.next('session.ended')).reason, 'OWNER_RESPONSE_TIMEOUT');
+  assert.equal((await viewer.next('session.ended')).reason, 'OWNER_RESPONSE_TIMEOUT');
+  owner.send('owner.session.accept', { requestId: request.requestId });
+  assert.equal((await owner.next('error')).code, 'NO_PENDING_SESSION');
+  assert.equal(app.relay.pending.size, 0);
+
+  viewer.send('viewer.session.request', { source: 'back', audio: false });
+  const second = await owner.next('session.request');
+  app.relay.pending.get(id).createdAt = Date.now() - 61_000;
+  owner.send('owner.session.accept', { requestId: second.requestId });
+  assert.equal((await owner.next('error')).code, 'NO_PENDING_SESSION');
+  assert.equal((await viewer.next('session.ended')).reason, 'OWNER_RESPONSE_TIMEOUT');
+  assert.equal(app.relay.active.size, 0);
+});

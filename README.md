@@ -1,6 +1,6 @@
 # CompanionShare
 
-**项目状态：0.2.0 Debug 测试版。Owner / Viewer APK 已通过 GitHub Actions 的 Android 36 实际构建；HyperOS 3 / Android 16 双机实测尚未完成，不属于稳定版。**
+**项目状态：0.2.1 开发候选版。0.2.0 的 Owner / Viewer APK 已通过 GitHub Actions 的 Android 36 构建；0.2.1 新增改动仍需重新构建与 Android 16 真机验收，不属于稳定版。**
 
 CompanionShare 是供手机持有人主动授权的一对一实时共享系统。Owner 为 HyperOS 3 / Android 16 手机；Viewer 是普通 Android 手机。Owner 打开共享后，Viewer 可按权限请求前置摄像头、后置摄像头、麦克风或屏幕画面，并互发文字信息。屏幕共享每次会话需要 Owner 在本机确认 Android 系统弹窗。Root 不用于绕过系统授权，也不暴露到 Viewer。
 
@@ -16,7 +16,7 @@ CompanionShare 是供手机持有人主动授权的一对一实时共享系统�
 | Android WebRTC | `android/common/` | 已编写，未进行双机媒体传输测试 |
 | GitHub CI | `.github/workflows/build.yml` | [GitHub Actions 构建通过](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666010522) |
 
-0.2.0 增加 Viewer 先初始化、Owner 后发送媒体 Offer 的会话就绪握手，并拒绝旧会话的异步信令；已修正屏幕投射生命周期的资源清理。Android 构建已完成，真机功能验证仍待完成。
+0.2.0 增加 Viewer 先初始化、Owner 后发送媒体 Offer 的会话就绪握手，并拒绝旧会话的异步信令；已修正屏幕投射生命周期的资源清理。0.2.1 在此基础上新增消息连接的开机恢复（不自动采集媒体）、过期配对/观看请求清理、Owner 后台聊天提醒。真机功能验证仍待完成。
 
 **GitHub Actions 已生成两份 Debug APK。** 在成功的 [构建记录](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666010522) 的 Artifacts 中下载 `CompanionShare-Android-debug`。请在安装前核对它们来自该工作流；构建成功不等于摄像头、麦克风、屏幕投射已通过 HyperOS 3 真机验收。仓库不提交 APK 二进制。
 
@@ -88,7 +88,8 @@ gradle :owner:assembleDebug :viewer:assembleDebug
 
 ## 实际业务限制
 
-- 只有 Owner 本机主动开启前台共享服务后，后台摄像头与麦克风请求才可以尝试启动；重启手机或系统杀死服务后，必须再次由 Owner 开启。长期开启不等于无条件无限保活。
+- 只有 Owner 本机主动开启前台共享服务后，后台摄像头与麦克风请求才可以尝试启动。Owner 成功登录服务端后允许在下一次开机时恢复「仅消息在线」状态和通知；不会自动开启摄像头、麦克风或屏幕采集，必须再次由 Owner 本机开启。按「暂停」会禁用下次开机自动恢复；具体设备仍受小米自启动/电池管理约束。
+- 一次性配对码有效期五分钟；服务端等待 Owner 处理新观看请求最多 60 秒，过期必须重新请求。Owner 收到 Viewer 消息时提供锁屏不显示正文的通知；最多 20 条未读消息只在进程内保留，不会保存聊天历史。
 - 屏幕共享需要每次新会话本机授权，并可能在锁屏时由系统中断。受保护内容不得绕过 Android 安全机制。
 - 没有远程触摸、ADB、Shell、文件访问、监控隐藏、系统提示抑制或通话录音功能。
 - 同时仅一路视频；环境麦克风音频随媒体会话启用，单独聊天可通过 TLS WebSocket 转发。媒体会话内优先通过 WebRTC DataChannel 聊天。
