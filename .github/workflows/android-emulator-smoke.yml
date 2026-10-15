@@ -1,0 +1,45 @@
+name: Android 16 emulator launch smoke
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix/boot-online-session-expiry-20261015]
+    paths:
+      - 'android/**'
+      - 'scripts/emulator-smoke.sh'
+      - '.github/workflows/android-emulator-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  emulator-launch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: ''
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Build Owner and Viewer debug APKs
+        working-directory: android
+        run: gradle --no-daemon :owner:assembleDebug :viewer:assembleDebug
+      - name: Boot Android 16 emulator and smoke-launch both apps
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          disable-animations: true
+          script: bash scripts/emulator-smoke.sh

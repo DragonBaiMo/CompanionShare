@@ -1,6 +1,6 @@
 # CompanionShare
 
-**项目状态：0.2.1 开发候选版。0.2.0 的 Owner / Viewer APK 已通过 GitHub Actions 的 Android 36 构建；0.2.1 新增改动仍需重新构建与 Android 16 真机验收，不属于稳定版。**
+**项目状态：0.2.1 Debug 候选版。Owner / Viewer APK 已通过 GitHub Actions 的 Android 36 构建；模拟器启动、HyperOS 3 / Android 16 真机媒体与后台恢复仍需单独验收，不属于稳定版。**
 
 CompanionShare 是供手机持有人主动授权的一对一实时共享系统。Owner 为 HyperOS 3 / Android 16 手机；Viewer 是普通 Android 手机。Owner 打开共享后，Viewer 可按权限请求前置摄像头、后置摄像头、麦克风或屏幕画面，并互发文字信息。屏幕共享每次会话需要 Owner 在本机确认 Android 系统弹窗。Root 不用于绕过系统授权，也不暴露到 Viewer。
 
@@ -17,6 +17,8 @@ CompanionShare 是供手机持有人主动授权的一对一实时共享系统�
 | GitHub CI | `.github/workflows/build.yml` | [GitHub Actions 构建通过](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666010522) |
 
 0.2.0 增加 Viewer 先初始化、Owner 后发送媒体 Offer 的会话就绪握手，并拒绝旧会话的异步信令；已修正屏幕投射生命周期的资源清理。0.2.1 在此基础上新增消息连接的开机恢复（不自动采集媒体）、过期配对/观看请求清理、Owner 后台聊天提醒。真机功能验证仍待完成。
+
+CI 补充了 Android 16 模拟器的 APK 安装/Activity 启动烟测，以及 Linux Docker 信令与 TURN 容器启动验证。这些检查仅覆盖各自验证范围；Android 16 真机媒体、HyperOS 后台策略和公网 TURN 仍需另行实测。
 
 **GitHub Actions 已生成两份 Debug APK。** 在成功的 [构建记录](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666010522) 的 Artifacts 中下载 `CompanionShare-Android-debug`。请在安装前核对它们来自该工作流；构建成功不等于摄像头、麦克风、屏幕投射已通过 HyperOS 3 真机验收。仓库不提交 APK 二进制。
 

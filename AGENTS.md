@@ -11,5 +11,6 @@
 | Windows 原生启动 | `deploy/start-windows.ps1` | 非 Docker 本机服务 | `powershell -File deploy/start-windows.ps1` |
 | Docker 双平台部署 | `deploy/docker-compose.yml` | TLS + 信令 + TURN | `docker compose --env-file deploy/.env -f deploy/docker-compose.yml up -d` |
 | Android 双 APK 构建 | `.github/workflows/build.yml` | GitHub Actions Android SDK 构建 | 手动触发 workflow 或 push |
+| Android 16 模拟器启动检查 | `scripts/emulator-smoke.sh` | 确认两份 APK 可安装、Activity 可启动且不崩溃 | 通过 `android-emulator-smoke.yml` 的 API 36 emulator 执行 |
 
 开发顺序：先对照 `docs/PRD-v1.0.md`，先实现影响范围内的最小测试，再编写代码。服务端测试成功不能证明 APK 可运行；真机验收必须如实记录。

@@ -52,3 +52,23 @@ jobs:
           TURN_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
           ENROLLMENT_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef'
         run: docker compose -f deploy/docker-compose.yml config --quiet
+  docker-signaling-and-turn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create ephemeral deployment credentials
+        run: |
+          node -e "const c=require('node:crypto'),f=require('node:fs');f.appendFileSync(process.env.GITHUB_ENV,'TURN_SECRET='+c.randomBytes(32).toString('hex')+'\nENROLLMENT_KEY='+c.randomBytes(32).toString('base64url')+'\n')"
+          echo 'DOMAIN=share.example.invalid' >> "$GITHUB_ENV"
+          echo 'TURN_HOST=turn.example.invalid' >> "$GITHUB_ENV"
+          echo 'PUBLIC_IP=127.0.0.1' >> "$GITHUB_ENV"
+      - name: Run native signaling and TURN Docker containers
+        run: |
+          docker compose -f deploy/docker-compose.yml up -d signal turn
+          docker compose -f deploy/docker-compose.yml exec -T signal node -e "fetch('http://127.0.0.1:8087/healthz').then(r=>r.json()).then(v=>{if(v.status!=='ok')process.exit(1)}).catch(()=>process.exit(1))"
+          docker compose -f deploy/docker-compose.yml ps --status running | grep -E '(signal|turn)'
+          docker compose -f deploy/docker-compose.yml restart signal
+          docker compose -f deploy/docker-compose.yml exec -T signal node -e "fetch('http://127.0.0.1:8087/healthz').then(r=>r.json()).then(v=>{if(v.status!=='ok')process.exit(1)}).catch(()=>process.exit(1))"
+      - name: Remove test containers
+        if: always()
+        run: docker compose -f deploy/docker-compose.yml down -v --remove-orphans

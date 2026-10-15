@@ -7,7 +7,9 @@
 
 - 本地 Node.js 22.16.0 运行 `npm --prefix server test`：16/16 通过，新增过期配对批准和未处理观看请求超时的两条回归。
 - Android Manifest/字符串资源 XML 解析、`server/src/protocol.mjs` 静态语法及 `git diff --check` 通过。
-- **未进行**：0.2.1 双 APK 编译、Android 16 真机开机恢复与消息通知测试、Windows/Linux 公网/TURN 实测。需以新版本 CI 和设备日志补齐；下方 Android 构建记录仅属于 0.2.0。
+- GitHub Actions [Android Debug 构建 #38668657617](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38668657617)：分支提交 `a5ef05da4d8da4ea239162e032e0f3b71db3ff64`，`success`，包含 0.2.1 Owner/Viewer 模块的新编译。
+- GitHub Actions [Windows/Linux 信令验证 #38668657668](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38668657668)：`success`，两平台 Node 测试及健康检查通过。
+- **未进行**：Android 16 模拟器启动、HyperOS 3 真机开机恢复与消息通知、Windows/Linux 公网/TURN 实测。新增模拟器与 Docker 容器测试工作流正在接入。下方详细构建记录属于 0.2.0 历史基线。
 
 ## 已实际执行
 
