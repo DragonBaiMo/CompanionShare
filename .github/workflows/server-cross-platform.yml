@@ -1,0 +1,54 @@
+name: Test CompanionShare signaling on Windows and Linux
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-server:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run signaling tests
+        working-directory: server
+        run: npm test
+      - name: Native server startup and health check
+        shell: pwsh
+        run: |
+          $env:ENROLLMENT_KEY = & node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))"
+          $env:PORT = '18087'
+          $env:BIND = '127.0.0.1'
+          $process = Start-Process -FilePath node -ArgumentList 'server/src/server.mjs' -NoNewWindow -PassThru
+          try {
+            $healthy = $false
+            for ($i = 0; $i -lt 20; $i++) {
+              Start-Sleep -Milliseconds 300
+              try {
+                $result = Invoke-RestMethod -Uri 'http://127.0.0.1:18087/healthz' -TimeoutSec 2
+                if ($result.status -eq 'ok') { $healthy = $true; break }
+              } catch { }
+            }
+            if (-not $healthy) { throw 'Native signaling startup/health check failed' }
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+            $process.Dispose()
+          }
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Docker Compose syntax
+        env:
+          DOMAIN: share.example.org
+          TURN_HOST: turn.example.org
+          PUBLIC_IP: 203.0.113.1
+          TURN_SECRET: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+          ENROLLMENT_KEY: '0123456789abcdef0123456789abcdef0123456789abcdef'
+        run: docker compose -f deploy/docker-compose.yml config --quiet

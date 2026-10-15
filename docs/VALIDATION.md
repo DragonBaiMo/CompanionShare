@@ -1,7 +1,7 @@
 # CompanionShare 验证记录
 
 日期：2026-10-15（北京时间）
-版本：源码预览 0.2.0
+版本：0.2.0 Debug 测试版
 
 ## 已实际执行
 
@@ -12,11 +12,12 @@
 - 配置文件 YAML：使用 Python PyYAML 解析，验证为有效 YAML（不替代 Docker Compose 执行）。
 - 已检索公开 Maven 和 Android 官方开发文档，选择 WebRTC Android SDK 150.7871.01、AGP 8.13.2、Gradle 8.13、compileSdk 36；这仅证明版本选择有公开依据，并非依赖成功下载或编译。
 - 2026-10-15 通过 coturn 4.18.0 官方发布信息确认 `--no-cli` 已移除；Docker Compose 删除该参数，未执行真实容器启动。
-- Android 两端针对 WebRTC 会话竞态做了源码级修复与一致性审查；此项未经过 Kotlin/Android 编译验证。
+- Android 两端针对 WebRTC 会话竞态做了源码级修复；两份应用现已通过 GitHub Actions 的 Android 36/Kotlin Debug 编译，行为仍需真机验证。
+- GitHub Actions [构建记录 #38666010522](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666010522)：`success`，提交 `662e57d41d9cea28e4f39ebe0c9f1e0553786d88`；上传 Artifact `CompanionShare-Android-debug`（ID `11940154366`），包含两个 APK。Artifact ZIP SHA-256 为 `d572d44b64ae602287541b1960b58610d85f952e32797913c23613502cdaaab2`。
 
 ## 未通过验证、禁止宣称完成
 
-1. **Owner APK / Viewer APK：未构建。** 当前工作容器没有 Android SDK 和 Gradle，命令行无法解析 Android SDK 仓库域名。需要 GitHub Actions 或可用 Android SDK 的构建机实际编译。
+1. **Owner APK / Viewer APK：已在 GitHub Actions 构建，但未安装到真机。** 当前工作容器仍无 Android SDK；CI 已实际编译，不能因此认定目标手机的系统采集行为已通过。
 2. **真实双端 WebRTC 音视频：未测试。** 尚未安装到两台 Android 手机。
 3. **HyperOS 3 / Android 16：未真机测试。** 后台摄像头、麦克风、锁屏 MediaProjection、中断恢复和耗电数据 Unknown。
 4. **Windows / Linux Docker 部署：未启动容器验证。** 当前环境没有 Docker；需 Windows 和 Linux 主机进行各自启动、端口和 TURN 中继测试。
@@ -33,4 +34,4 @@
 - 无 Viewer 时 MediaProjection、摄像头、音频采集与编码器均不应处于活动状态。
 - 完整执行 8 小时待机对照，并记录设备电量、CPU 时间与系统省电限制。
 
-**结论：这是带有服务端自动化测试的源码预览包，不是两个已经验证通过、可直接安装的 APK。**
+**结论：两份 Debug APK 已构建且可供安装测试；服务端信令测试通过。HyperOS 3 真机、跨运营商 WebRTC、Windows/Linux 正式部署及耗电验收仍未完成。**

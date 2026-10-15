@@ -1,6 +1,6 @@
 # CompanionShare
 
-**项目状态：开发预览版（0.2.0）。在 APK 构建和 Android 16 真机验收完成前，不得标记为稳定版。**
+**项目状态：0.2.0 Debug 测试版。Owner / Viewer APK 已通过 GitHub Actions 的 Android 36 实际构建；HyperOS 3 / Android 16 双机实测尚未完成，不属于稳定版。**
 
 CompanionShare 是供手机持有人主动授权的一对一实时共享系统。Owner 为 HyperOS 3 / Android 16 手机；Viewer 是普通 Android 手机。Owner 打开共享后，Viewer 可按权限请求前置摄像头、后置摄像头、麦克风或屏幕画面，并互发文字信息。屏幕共享每次会话需要 Owner 在本机确认 Android 系统弹窗。Root 不用于绕过系统授权，也不暴露到 Viewer。
 
@@ -11,14 +11,14 @@ CompanionShare 是供手机持有人主动授权的一对一实时共享系统�
 | 信令服务 | `server/`（Node.js 22+，零 NPM 运行时依赖） | 14 项集成测试通过 |
 | Linux 部署 | `deploy/start-linux.sh`、`deploy/docker-compose.yml` | 配置编写完成，正式公网部署未测试 |
 | Windows 部署 | `deploy/start-windows.ps1`、Docker Compose | 配置编写完成，Windows 实机未测试 |
-| Owner APK 源码 | `android/owner/` | 已编写，未编译或安装测试 |
-| Viewer APK 源码 | `android/viewer/` | 已编写，未编译或安装测试 |
+| Owner APK 源码 | `android/owner/` | GitHub Actions 已完成 Debug APK 编译，尚未真机安装测试 |
+| Viewer APK 源码 | `android/viewer/` | GitHub Actions 已完成 Debug APK 编译，尚未真机安装测试 |
 | Android WebRTC | `android/common/` | 已编写，未进行双机媒体传输测试 |
-| GitHub CI | `.github/workflows/build.yml` | 已编写，尚未在 GitHub 运行 |
+| GitHub CI | `.github/workflows/build.yml` | [GitHub Actions 构建通过](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666010522) |
 
-0.2.0 增加 Viewer 先初始化、Owner 后发送媒体 Offer 的会话就绪握手，并拒绝旧会话的异步信令；已修正屏幕投射生命周期的资源清理。Android 构建与真机验证仍待完成。
+0.2.0 增加 Viewer 先初始化、Owner 后发送媒体 Offer 的会话就绪握手，并拒绝旧会话的异步信令；已修正屏幕投射生命周期的资源清理。Android 构建已完成，真机功能验证仍待完成。
 
-**ZIP 中没有 APK 二进制文件。**当前构建容器没有 Android SDK、Gradle 和外部依赖下载网络。不能以文件存在证明该 APK 可以安装或正常推流。通过 GitHub Actions 或具有 Android SDK 的开发机执行构建后，仍必须执行 Android 16 真机验收。
+**GitHub Actions 已生成两份 Debug APK。** 在成功的 [构建记录](https://github.com/DragonBaiMo/CompanionShare/actions/runs/38666010522) 的 Artifacts 中下载 `CompanionShare-Android-debug`。请在安装前核对它们来自该工作流；构建成功不等于摄像头、麦克风、屏幕投射已通过 HyperOS 3 真机验收。仓库不提交 APK 二进制。
 
 ## 推荐部署（Windows / Linux 共用）
 
@@ -84,7 +84,7 @@ gradle :owner:assembleDebug :viewer:assembleDebug
 - `android/owner/build/outputs/apk/debug/owner-debug.apk`
 - `android/viewer/build/outputs/apk/debug/viewer-debug.apk`
 
-也可把源码推送到你的专用 GitHub 仓库，运行 `Build Android APKs and test signaling` workflow；其构建产物会作为 Action Artifact 下载。**本环境未实际执行以上 APK 构建，产物位置只是构建成功后的预期位置。**
+专用仓库已经完成 `Build Android APKs and test signaling` 工作流，实际生成了 `owner-debug.apk` 和 `viewer-debug.apk`；对应 CI 提交 `662e57d41d9cea28e4f39ebe0c9f1e0553786d88`。本机容器未安装 Android SDK，故不把 GitHub 上的编译结果描述为本机编译或真机安装验证。
 
 ## 实际业务限制
 
